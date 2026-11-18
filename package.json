@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.121",
+    "ai": "^7.0.177",
     "groq-sdk": "^1.6.0"
   }
 }

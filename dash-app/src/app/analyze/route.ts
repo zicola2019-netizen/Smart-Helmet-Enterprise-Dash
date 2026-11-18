@@ -1,32 +1,27 @@
 import { NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import { createOpenAI } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+
+// إعداد الاتصال بـ Vercel AI Gateway
+const gateway = createOpenAI({
+  baseURL: 'https://api.vercel.ai/v1',
+  apiKey: process.env.VERCEL_AI_KEY, // الاسم ده إحنا اللي هنعمله في Vercel
+});
 
 export async function POST(req: Request) {
   try {
-    const apiKey = process.env.GROQ_API_KEY;
-    
-    if (!apiKey) {
-      return NextResponse.json({ error: 'المفتاح GROQ_API_KEY غير موجود' }, { status: 500 });
-    }
-
-    const groq = new Groq({ apiKey });
     const data = await req.json();
 
-    const prompt = `
-      أنت خبير سلامة وصحة مهنية.
-      قراءات الخوذة: حرارة ${data.temperature}C، غاز ${data.gas} PPM، نبض ${data.heart_rate} BPM، أكسجين ${data.spo2}%.
-      الحالة: ${data.danger ? 'خطر!' : 'آمن'}.
-      المطلوب: نسبة أمان من 100%، تحليل سريع، وتوصيات فورية بالعربي.
-    `;
-
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama3-8b-8192',
+    // إرسال الطلب للموديل عن طريق Vercel
+    const { text } = await generateText({
+      model: gateway('gpt-4o-mini'), // موديل سريع وذكي جداً
+      system: "أنت خبير سلامة وصحة مهنية. اكتب تحليل سريع وتوصيات فورية باللغة العربية بناءً على القراءات.",
+      prompt: `حرارة: ${data.temperature}، غاز: ${data.gas}، نبض: ${data.heart_rate}، أكسجين: ${data.spo2}، هل يوجد خطر؟ ${data.danger}`,
     });
 
-    return NextResponse.json({ analysis: chatCompletion.choices[0].message.content });
+    return NextResponse.json({ analysis: text });
   } catch (error: any) {
-    console.error("Groq Error:", error);
+    console.error("Vercel AI Error:", error);
     return NextResponse.json({ error: error.message || 'خطأ غير معروف' }, { status: 500 });
   }
 }
