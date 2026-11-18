@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 
-export const runtime = 'nodejs';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY, 
-});
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GROQ_API_KEY;
+    
+    if (!apiKey) {
+      return NextResponse.json({ error: 'المفتاح GROQ_API_KEY غير موجود' }, { status: 500 });
+    }
+
+    // نقلنا تعريف Groq هنا جوه الدالة عشان نمنع أخطاء البناء
+    const groq = new Groq({ apiKey });
+    
     const data = await req.json();
 
     const prompt = `
@@ -20,12 +23,12 @@ export async function POST(req: Request) {
 
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile', // غيرنا الموديل لواحد مضمون
+      model: 'llama3-8b-8192',
     });
 
     return NextResponse.json({ analysis: chatCompletion.choices[0].message.content });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Groq Error:", error);
-    return NextResponse.json({ error: 'Failed to analyze' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'خطأ غير معروف' }, { status: 500 });
   }
 }
