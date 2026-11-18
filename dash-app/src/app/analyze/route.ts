@@ -9,9 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'المفتاح GROQ_API_KEY غير موجود' }, { status: 500 });
     }
 
-    // نقلنا تعريف Groq هنا جوه الدالة عشان نمنع أخطاء البناء
     const groq = new Groq({ apiKey });
-    
     const data = await req.json();
 
     const prompt = `
